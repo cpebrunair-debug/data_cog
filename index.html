@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGIS COG - Leaflet</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 600px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+       // Gunakan koordinat Indonesia secara umum agar data terlihat
+const map = L.map('map').setView([-2.5, 118], 5); 
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+const titilerEndpoint = "https://titiler.xyz"; 
+const myCogUrl = "https://cpebrunair-debug.github.io/data_cog/Banjir_Indonesia_COG.tif"; 
+
+// 1. Cek dulu apakah filenya bisa dibaca metadata-nya
+fetch(`${titilerEndpoint}/cog/info?url=${myCogUrl}`)
+    .then(res => res.json())
+    .then(metadata => {
+        console.log("Metadata ditemukan:", metadata);
+        
+        // 2. Jika metadata ada, arahkan peta otomatis ke lokasi file
+        const bounds = [
+            [metadata.bounds[1], metadata.bounds[0]], 
+            [metadata.bounds[3], metadata.bounds[2]]
+        ];
+        map.fitBounds(bounds);
+
+        // 3. Tambahkan layer dengan parameter yang lebih aman
+        const tileUrl = `${titilerEndpoint}/cog/tiles/{z}/{x}/{y}.png?url=${encodeURIComponent(myCogUrl)}&rescale=0,1&colormap_name=blues`;
+        
+        L.tileLayer(tileUrl, {
+            opacity: 0.8,
+            maxZoom: 20
+        }).addTo(map);
+    })
+    .catch(err => {
+        console.error("Gagal memuat data dari TiTiler. Periksa CORS atau URL file.", err);
+    });
+    </script>
+</body>
+</html>
